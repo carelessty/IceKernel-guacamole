@@ -3284,6 +3284,7 @@ bool sde_crtc_get_fingerprint_pressed(struct drm_crtc_state *crtc_state)
 
 extern int oneplus_force_screenfp;
 extern int oneplus_panel_alpha;
+extern int oneplus_fod_panel_alpha;
 struct ba {
 	u32 brightness;
 	u32 alpha;
@@ -3434,6 +3435,17 @@ int oneplus_get_panel_brightness_to_alpha(void)
 		return brightness_to_alpha(display->panel->hbm_backlight);
     else
 	return bl_to_alpha_dc(display->panel->hbm_backlight);
+}
+
+int oneplus_get_fod_panel_brightness_to_alpha(void)
+{
+	struct dsi_display *display = get_main_display();
+
+	if (!display)
+		return 0;
+	if (oneplus_fod_panel_alpha)
+		return oneplus_fod_panel_alpha;
+		return brightness_to_alpha(display->panel->hbm_backlight);
 }
 
 int oneplus_onscreenaod_hid = 0;
