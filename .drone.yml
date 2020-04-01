@@ -1,0 +1,24 @@
+---
+kind: pipeline
+name: IceKernel CI
+
+platform:
+  os: linux
+  arch: amd64
+
+clone:
+  depth: 1
+
+steps:
+  - name: build
+    image: ubuntu:19.10
+    environment:
+      GIT_SECRET:
+        from_secret: GIT_SECRET
+    commands:
+      - apt update
+      - apt dist-upgrade -y
+      - apt-get install -y liblz4* p7zip-full gcc g++ bc make git zip flex zipalign
+      - export HOME=/drone
+      - cd /drone/src
+      - bash build_ci.sh
