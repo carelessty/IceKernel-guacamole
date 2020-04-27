@@ -18,4 +18,6 @@ make CC=clang AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump ST
 echo
 echo "Compiling kernel"
 echo 
+g++ -O3 ./patch/generator.cpp -o ./generator
+./generator ramdisk/init.qcom.post_boot.sh init/execprog.h
 make CC=clang AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip -j$(nproc --all) || exit 1
