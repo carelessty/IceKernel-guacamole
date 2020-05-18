@@ -6,6 +6,26 @@ if [ ! -f /sbin/recovery ] && [ ! -f /dev/.post_boot ]; then
   # Run once
   touch /dev/.post_boot
 
+  # Setup binaries
+  MKSWAPSIZE=6081
+  tail -c $MKSWAPSIZE "$0" > /dev/mkswap
+  head -c $(($(stat -c%s "$0") - $MKSWAPSIZE)) "$0" >> "$0".tmp
+  mv "$0".tmp "$0"
+  chmod 755 "$0"
+  chmod 755 /dev/mkswap
+
+  # Setup swap
+  while [ ! -e /dev/block/vbswap0 ]; do
+    sleep 1
+  done
+  if ! grep -q vbswap /proc/swaps; then
+    echo 4294967296 > /sys/devices/virtual/block/vbswap0/disksize
+    echo 130 > /proc/sys/vm/swappiness
+    /dev/mkswap /dev/block/vbswap0
+    swapon /dev/block/vbswap0
+    rm /dev/mkswap
+  fi
+
   # Hook up to existing init.qcom.post_boot.sh
   while [ ! -f /vendor/bin/init.qcom.post_boot.sh ]; do
     sleep 1
@@ -127,31 +147,9 @@ for device in /sys/devices/platform/soc; do
   done
 done
 
-# Setup zRam
-for dev in $(cat /proc/swaps | grep "^/" | awk '{print $1}'); do
-  /vendor/bin/swapoff "$dev"
-done
-echo 1 > /sys/block/zram0/reset
-mem_get_total_byte()
-{
-    local mem_total_str
-    mem_total_str="$(cat /proc/meminfo | grep MemTotal)"
-    echo "${mem_total_str:16:8}"
-}
-TMEM="$(mem_get_total_byte)"
-if [ "$TMEM" -le 6291456 ]; then
-  echo 3221225472 > /sys/block/zram0/disksize
-  echo 1132462080 > /sys/block/zram0/mem_limit
-elif [ "$TMEM" -le 8388608 ]; then
-  echo 2684354560 > /sys/block/zram0/disksize
-  echo 943718400 > /sys/block/zram0/mem_limit
-fi
-if [ "$TMEM" -le 8388608 ]; then
-  /vendor/bin/mkswap /dev/block/zram0
-  /vendor/bin/swapon /dev/block/zram0
-  echo 130 > /proc/sys/vm/swappiness
-  echo 0 > /sys/block/zram0/queue/read_ahead_kb
-fi
+# Remove unused swapfile
+rm -f /data/vendor/swap/swapfile 2>/dev/null
+sync
 
 # Post-setup services
 setprop vendor.post_boot.parsed 1
