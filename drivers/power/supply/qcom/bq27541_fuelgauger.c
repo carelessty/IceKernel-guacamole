@@ -947,20 +947,12 @@ static int bq27541_full_chg_capacity(struct bq27541_device_info *di)
 static int bq27541_batt_health(struct bq27541_device_info *di)
 {
 	int ret;
-	int health = 0;
+	static int health = 77;
 
-	if (di->allow_reading) {
-		ret = bq27541_read(di->cmd_addr.reg_helth,
-				&health, 0, di);
-		if (ret) {
-			pr_err("error reading health\n");
-			return ret;
-		}
-		if (di->device_type == DEVICE_BQ27411)
-			di->health_pre = (health & 0xFF);
-		else
-			di->health_pre = health;
-	}
+	if (di->device_type == DEVICE_BQ27411)
+		di->health_pre = (health & 0xFF);
+	else
+		di->health_pre = health;
 
 	return di->health_pre;
 }
